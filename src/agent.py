@@ -1,100 +1,66 @@
 from agno.agent.agent import Agent
-from agno.models.mistral import MistralChat
+from agno.models.openai import OpenAIChat
 from agno.storage.sqlite import SqliteStorage
 from agno.memory.agent import AgentMemory
-import os
+from agno.tools.reasoning import ReasoningTools
+from src.agent_settings import settings
+from src.agent_system_instructions import instructions
+
 
 from src.tools.command_tools import (
-    ejecutar_comando,
-    obtener_directorio_actual,
-    cambiar_directorio,
-    obtener_info_sistema,
+    execute_command,
+    get_current_directory,
+    change_directory,
 )
 from src.tools.file_tools import (
-    leer_archivo,
-    escribir_archivo,
-    eliminar_archivo,
-    listar_archivos,
-    buscar_archivos,
+    read_file,
+    write_file,
+    delete_file,
+    list_files,
+    search_files,
+    replace_in_file,
 )
 
 
-def crear_agente_codificador():
-    """Crea y configura el agente asistente codificador."""
+def create_coding_agent():
+    storage = SqliteStorage(table_name="agent_sessions", db_file=settings.DATABASE_PATH)
 
-    db_file = "tmp/agent.db"
-
-    os.makedirs("tmp", exist_ok=True)
-
-    memory = AgentMemory()
-
-    storage = SqliteStorage(table_name="agent_sessions", db_file=db_file)
-
-    agente = Agent(
-        name="AsistenteCodificador",
-        model=MistralChat(id="devstral-small-2505"),
-        description="Soy un asistente codificador experto que puede ayudarte con tareas de programación, manejo de archivos y ejecución de comandos.",
-        instructions=[
-            "Eres un asistente de programación experto y útil.",
-            "Puedes leer, escribir y manipular archivos libremente.",
-            "Puedes ejecutar comandos del sistema y código Python sin restricciones.",
-            "Eres autónomo y puedes tomar decisiones técnicas por tu cuenta.",
-            "Usa las herramientas disponibles para ayudar al usuario de manera eficiente.",
-            "Responde siempre en español.",
-            "Sé preciso, detallado y proactivo en tus acciones.",
-            "Si necesitas crear directorios, archivos o ejecutar comandos, hazlo directamente.",
-            "Cuando uses herramientas, explica brevemente qué estás haciendo.",
-        ],
+    agent = Agent(
+        name="Coding Assistant",
+        model=OpenAIChat(id=settings.OPENAI_MODEL, api_key=settings.OPENAI_API_KEY),
+        description="I am an expert coding assistant that can help you with programming tasks, file management and command execution.",
+        instructions=instructions,
         tools=[
-            leer_archivo,
-            escribir_archivo,
-            eliminar_archivo,
-            listar_archivos,
-            buscar_archivos,
-            ejecutar_comando,
-            obtener_directorio_actual,
-            cambiar_directorio,
-            obtener_info_sistema,
+            read_file,
+            write_file,
+            delete_file,
+            list_files,
+            search_files,
+            execute_command,
+            get_current_directory,
+            change_directory,
+            replace_in_file,
+            ReasoningTools(add_few_shot=True, add_instructions=True),
         ],
         storage=storage,
         add_history_to_messages=True,
         num_history_runs=3,
         show_tool_calls=True,
         markdown=True,
-        memory=memory,
+        memory=AgentMemory(),
     )
 
-    return agente
+    return agent
 
 
-def ejecutar_agente():
-    """Ejecuta el agente usando el CLI nativo de Agno."""
-    print("🤖 Agente Asistente Codificador - Modo Autónomo")
-    print("💡 Usa 'exit', 'quit' o 'bye' para salir")
-    print("🚀 El agente puede ejecutar comandos libremente")
-    print("📁 Historial de chat guardado automáticamente")
-    print("=" * 50)
+def run_agent():
+    agent = create_coding_agent()
 
-    agente = crear_agente_codificador()
-
-    agente.new_session()
-
-    # Mostrar información de sesión
-    print(f"🔗 ID de sesión: {agente.session_id}")
-    print()
-
-    # Usar el CLI nativo de Agno con configuración en español
-    agente.cli_app(
-        user="Usuario",
+    agent.new_session()
+    agent.cli_app(
+        user="User",
         emoji="👤",
         stream=True,
         markdown=True,
         exit_on=["exit", "quit", "bye", "salir"],
     )
-
-    print("\n👋 ¡Hasta luego!")
-    print(f"💾 Historial guardado en sesión: {agente.session_id}")
-
-
-if __name__ == "__main__":
-    ejecutar_agente()

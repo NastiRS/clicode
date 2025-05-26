@@ -1,5 +1,4 @@
 import os
-import platform
 import subprocess
 from pathlib import Path
 
@@ -7,26 +6,26 @@ from agno.tools import tool
 
 
 @tool()
-def ejecutar_comando(comando: str) -> str:
-    """Ejecuta un comando del sistema.
+def execute_command(command: str) -> str:
+    """Executes a system command.
 
     Args:
-        comando: El comando a ejecutar
+        command: The command to execute
 
     Returns:
-        La salida del comando o mensaje de error
+        The command output or error message
     """
     try:
         result = subprocess.run(
-            comando,
+            command,
             shell=True,
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=60,
         )
 
-        output = f"Comando: {comando}\n"
-        output += f"Código de salida: {result.returncode}\n"
+        output = f"Command: {command}\n"
+        output += f"Exit code: {result.returncode}\n"
 
         if result.stdout:
             output += f"STDOUT:\n{result.stdout}\n"
@@ -36,75 +35,46 @@ def ejecutar_comando(comando: str) -> str:
         return output
 
     except subprocess.TimeoutExpired:
-        return f"⏰ El comando '{comando}' excedió el tiempo límite de 2 minutos"
+        return f"⏰ Command '{command}' exceeded the 1 minute timeout"
     except Exception as e:
-        return f"❌ Error al ejecutar '{comando}': {str(e)}"
+        return f"❌ Error executing '{command}': {str(e)}"
 
 
 @tool()
-def obtener_directorio_actual() -> str:
-    """Obtiene el directorio de trabajo actual.
+def get_current_directory() -> str:
+    """Gets the current working directory.
 
     Returns:
-        La ruta del directorio actual
+        The current directory path
     """
     try:
-        directorio = os.getcwd()
-        return f"📁 Directorio actual: {directorio}"
+        directory = os.getcwd()
+        return f"📁 Current directory: {directory}"
     except Exception as e:
-        return f"❌ Error al obtener directorio: {str(e)}"
+        return f"❌ Error getting directory: {str(e)}"
 
 
 @tool()
-def cambiar_directorio(ruta: str) -> str:
-    """Cambia el directorio de trabajo.
+def change_directory(path: str) -> str:
+    """Changes the working directory.
 
     Args:
-        ruta: La ruta del nuevo directorio
+        path: The path to the new directory
 
     Returns:
-        Confirmación del cambio o mensaje de error
+        Change confirmation or error message
     """
     try:
-        ruta_path = Path(ruta)
-        if not ruta_path.exists():
-            return f"❌ La ruta no existe: {ruta}"
+        path_obj = Path(path)
+        if not path_obj.exists():
+            return f"❌ Path does not exist: {path}"
 
-        if not ruta_path.is_dir():
-            return f"❌ La ruta no es un directorio: {ruta}"
+        if not path_obj.is_dir():
+            return f"❌ Path is not a directory: {path}"
 
-        os.chdir(ruta)
-        nuevo_directorio = os.getcwd()
-        return f"✅ Directorio cambiado a: {nuevo_directorio}"
-
-    except Exception as e:
-        return f"❌ Error al cambiar directorio: {str(e)}"
-
-
-@tool()
-def obtener_info_sistema() -> str:
-    """Obtiene información del sistema.
-
-    Returns:
-        Información detallada del sistema
-    """
-    try:
-        info = {
-            "Sistema": platform.system(),
-            "Versión": platform.version(),
-            "Arquitectura": platform.architecture()[0],
-            "Procesador": platform.processor(),
-            "Nombre del equipo": platform.node(),
-            "Usuario": os.getenv("USERNAME") or os.getenv("USER", "Desconocido"),
-            "Python": platform.python_version(),
-            "Directorio actual": os.getcwd(),
-        }
-
-        resultado = "🖥️ Información del sistema:\n"
-        for clave, valor in info.items():
-            resultado += f"  • {clave}: {valor}\n"
-
-        return resultado
+        os.chdir(path)
+        new_directory = os.getcwd()
+        return f"✅ Directory changed to: {new_directory}"
 
     except Exception as e:
-        return f"❌ Error al obtener información del sistema: {str(e)}"
+        return f"❌ Error changing directory: {str(e)}"

@@ -1,39 +1,22 @@
-import os
 import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
-
-from dotenv import load_dotenv
 
 
 def main():
-    """Función principal."""
-    # Cargar variables de entorno
-    load_dotenv()
-
-    # Verificar API key de Mistral
-    if not os.getenv("MISTRAL_API_KEY"):
-        print("❌ Error: Variable de entorno MISTRAL_API_KEY no encontrada")
-        print("💡 Crea un archivo .env con tu API key de Mistral:")
-        print("   MISTRAL_API_KEY=tu_api_key_aqui")
-        return 1
-
     try:
-        from src.agent import ejecutar_agente
+        from src.agent import run_agent
 
-        ejecutar_agente()
+        run_agent()
         return 0
 
     except KeyboardInterrupt:
-        print("\n👋 ¡Hasta luego!")
+        print("\n👋 See you later!")
         return 0
     except ImportError as e:
-        print(f"❌ Error de importación: {e}")
-        print("💡 Asegúrate de que todas las dependencias estén instaladas")
+        print(f"❌ Import error: {e}")
+        print("💡 Make sure all dependencies are installed")
         return 1
     except Exception as e:
-        print(f"❌ Error inesperado: {e}")
+        print(f"❌ Unexpected error: {e}")
         return 1
 
 
