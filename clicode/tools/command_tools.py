@@ -1,13 +1,19 @@
 import os
 import subprocess
-from pathlib import Path
 
 from agno.tools import tool
+from .security import (
+    DEFAULT_TIMEOUT,
+    validate_path_or_error,
+    get_safe_path,
+    truncate_output,
+    WORKING_DIRECTORY,
+)
 
 
 @tool()
 def execute_command(command: str) -> str:
-    """Executes a system command.
+    """Executes a system command with security restrictions.
 
     Args:
         command: The command to execute
@@ -16,14 +22,17 @@ def execute_command(command: str) -> str:
         The command output or error message
     """
     try:
+        # Execute with timeout and capture output
         result = subprocess.run(
             command,
             shell=True,
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=DEFAULT_TIMEOUT,
+            cwd=str(WORKING_DIRECTORY),  # Ensure execution in working directory
         )
 
+        # Build output
         output = f"Command: {command}\n"
         output += f"Exit code: {result.returncode}\n"
 
@@ -32,10 +41,11 @@ def execute_command(command: str) -> str:
         if result.stderr:
             output += f"STDERR:\n{result.stderr}\n"
 
-        return output
+        # Truncate output if too long
+        return truncate_output(output)
 
     except subprocess.TimeoutExpired:
-        return f"⏰ Command '{command}' exceeded the 1 minute timeout"
+        return f"⏰ Command '{command}' exceeded the {DEFAULT_TIMEOUT} second timeout"
     except Exception as e:
         return f"❌ Error executing '{command}': {str(e)}"
 
@@ -56,25 +66,34 @@ def get_current_directory() -> str:
 
 @tool()
 def change_directory(path: str) -> str:
-    """Changes the working directory.
+    """Changes the working directory within the allowed workspace.
 
     Args:
-        path: The path to the new directory
+        path: The path to the new directory (must be within working directory)
 
     Returns:
         Change confirmation or error message
     """
     try:
-        path_obj = Path(path)
-        if not path_obj.exists():
+        # Validate path security
+        security_error = validate_path_or_error(path)
+        if security_error:
+            return security_error
+
+        # Get safe path
+        safe_path = get_safe_path(path)
+
+        if not safe_path.exists():
             return f"❌ Path does not exist: {path}"
 
-        if not path_obj.is_dir():
+        if not safe_path.is_dir():
             return f"❌ Path is not a directory: {path}"
 
-        os.chdir(path)
+        os.chdir(str(safe_path))
         new_directory = os.getcwd()
         return f"✅ Directory changed to: {new_directory}"
 
+    except ValueError as e:
+        return f"🚫 Security Error: {str(e)}"
     except Exception as e:
         return f"❌ Error changing directory: {str(e)}"

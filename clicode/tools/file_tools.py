@@ -1,36 +1,49 @@
-import os
 import shutil
-from pathlib import Path
 from typing import Optional
 
 from agno.tools import tool
+from .security import validate_path_or_error, get_safe_path, truncate_output
 
 
 @tool()
 def read_file(path: str) -> str:
-    """Reads the complete content of a file.
+    """Reads the complete content of a file within the working directory.
 
     Args:
-        path: Path of the file to read
+        path: Path of the file to read (must be within working directory)
 
     Returns:
         File content as string
     """
     try:
-        with open(path, "r", encoding="utf-8") as f:
-            return f.read()
+        # Validate path security
+        security_error = validate_path_or_error(path)
+        if security_error:
+            return security_error
+
+        # Get safe path
+        safe_path = get_safe_path(path)
+
+        with open(safe_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # Truncate if content is too large
+        return truncate_output(content)
+
     except FileNotFoundError:
-        return f"Error: The file '{path}' does not exist."
+        return f"❌ Error: The file '{path}' does not exist."
+    except ValueError as e:
+        return f"🚫 Security Error: {str(e)}"
     except Exception as e:
-        return f"Error reading file: {str(e)}"
+        return f"❌ Error reading file: {str(e)}"
 
 
 @tool()
 def write_file(path: str, content: str, overwrite: bool = True) -> str:
-    """Creates or edits a file with the specified content.
+    """Creates or edits a file with the specified content within the working directory.
 
     Args:
-        path: Path of the file to create/edit
+        path: Path of the file to create/edit (must be within working directory)
         content: Content to write to the file
         overwrite: If True, overwrites existing file
 
@@ -38,50 +51,76 @@ def write_file(path: str, content: str, overwrite: bool = True) -> str:
         Confirmation message
     """
     try:
-        # Create parent directories if they don't exist
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        # Validate path security
+        security_error = validate_path_or_error(path)
+        if security_error:
+            return security_error
 
-        if not overwrite and os.path.exists(path):
-            return f"Error: The file '{path}' already exists and overwrite is disabled."
+        # Get safe path
+        safe_path = get_safe_path(path)
 
-        with open(path, "w", encoding="utf-8") as f:
+        # Create parent directories if they don't exist (but only within working dir)
+        safe_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if not overwrite and safe_path.exists():
+            return (
+                f"❌ Error: The file '{path}' already exists and overwrite is disabled."
+            )
+
+        with open(safe_path, "w", encoding="utf-8") as f:
             f.write(content)
-        return f"File '{path}' {'created' if not os.path.exists(path) else 'updated'} successfully."
+
+        action = "created" if not safe_path.exists() else "updated"
+        return f"✅ File '{path}' {action} successfully."
+
+    except ValueError as e:
+        return f"🚫 Security Error: {str(e)}"
     except Exception as e:
-        return f"Error writing file: {str(e)}"
+        return f"❌ Error writing file: {str(e)}"
 
 
 @tool()
 def delete_file(path: str) -> str:
-    """Deletes a file or directory.
+    """Deletes a file or directory within the working directory.
 
     Args:
-        path: Path of the file or directory to delete
+        path: Path of the file or directory to delete (must be within working directory)
 
     Returns:
         Confirmation message
     """
     try:
-        if os.path.isfile(path):
-            os.remove(path)
-            return f"File '{path}' deleted successfully."
-        elif os.path.isdir(path):
-            shutil.rmtree(path)
-            return f"Directory '{path}' deleted successfully."
+        # Validate path security
+        security_error = validate_path_or_error(path)
+        if security_error:
+            return security_error
+
+        # Get safe path
+        safe_path = get_safe_path(path)
+
+        if safe_path.is_file():
+            safe_path.unlink()
+            return f"✅ File '{path}' deleted successfully."
+        elif safe_path.is_dir():
+            shutil.rmtree(safe_path)
+            return f"✅ Directory '{path}' deleted successfully."
         else:
-            return f"Error: '{path}' does not exist."
+            return f"❌ Error: '{path}' does not exist."
+
+    except ValueError as e:
+        return f"🚫 Security Error: {str(e)}"
     except Exception as e:
-        return f"Error deleting: {str(e)}"
+        return f"❌ Error deleting: {str(e)}"
 
 
 @tool()
 def list_files(
     directory: str = ".", pattern: Optional[str] = None, recursive: bool = False
 ) -> str:
-    """Lists files in a directory with filtering options.
+    """Lists files in a directory with filtering options within the working directory.
 
     Args:
-        directory: Directory to explore (current by default)
+        directory: Directory to explore (current by default, must be within working directory)
         pattern: Search pattern (e.g.: "*.py", "test*")
         recursive: If True, searches recursively in subdirectories
 
@@ -89,20 +128,27 @@ def list_files(
         List of found files
     """
     try:
-        path = Path(directory)
-        if not path.exists():
-            return f"Error: The directory '{directory}' does not exist."
+        # Validate path security
+        security_error = validate_path_or_error(directory)
+        if security_error:
+            return security_error
+
+        # Get safe path
+        safe_path = get_safe_path(directory)
+
+        if not safe_path.exists():
+            return f"❌ Error: The directory '{directory}' does not exist."
 
         if recursive:
             if pattern:
-                files = list(path.rglob(pattern))
+                files = list(safe_path.rglob(pattern))
             else:
-                files = list(path.rglob("*"))
+                files = list(safe_path.rglob("*"))
         else:
             if pattern:
-                files = list(path.glob(pattern))
+                files = list(safe_path.glob(pattern))
             else:
-                files = list(path.iterdir())
+                files = list(safe_path.iterdir())
 
         # Separate files and directories
         dirs = [f for f in files if f.is_dir()]
@@ -125,27 +171,38 @@ def list_files(
         if not dirs and not file_list:
             result += "No files or directories found."
 
-        return result
+        # Truncate output if too long
+        return truncate_output(result)
+
+    except ValueError as e:
+        return f"🚫 Security Error: {str(e)}"
     except Exception as e:
-        return f"Error listing files: {str(e)}"
+        return f"❌ Error listing files: {str(e)}"
 
 
 @tool()
 def search_files(name: str, directory: str = ".", recursive: bool = True) -> str:
-    """Searches for files by name intelligently.
+    """Searches for files by name intelligently within the working directory.
 
     Args:
         name: Name or pattern of the file to search
-        directory: Directory where to search
+        directory: Directory where to search (must be within working directory)
         recursive: If True, searches in subdirectories
 
     Returns:
         List of found files with their paths
     """
     try:
-        path = Path(directory)
-        if not path.exists():
-            return f"Error: The directory '{directory}' does not exist."
+        # Validate path security
+        security_error = validate_path_or_error(directory)
+        if security_error:
+            return security_error
+
+        # Get safe path
+        safe_path = get_safe_path(directory)
+
+        if not safe_path.exists():
+            return f"❌ Error: The directory '{directory}' does not exist."
 
         # Search with different patterns
         patterns = [
@@ -159,9 +216,9 @@ def search_files(name: str, directory: str = ".", recursive: bool = True) -> str
 
         for pattern in patterns:
             if recursive:
-                matches = path.rglob(pattern)
+                matches = safe_path.rglob(pattern)
             else:
-                matches = path.glob(pattern)
+                matches = safe_path.glob(pattern)
 
             for match in matches:
                 if match.is_file():
@@ -175,17 +232,21 @@ def search_files(name: str, directory: str = ".", recursive: bool = True) -> str
             size = file.stat().st_size
             result += f"📄 {file} ({size} bytes)\n"
 
-        return result
+        # Truncate output if too long
+        return truncate_output(result)
+
+    except ValueError as e:
+        return f"🚫 Security Error: {str(e)}"
     except Exception as e:
-        return f"Error searching files: {str(e)}"
+        return f"❌ Error searching files: {str(e)}"
 
 
 @tool()
 def replace_in_file(path: str, diff: str) -> str:
-    """Replaces specific sections of content in an existing file using SEARCH/REPLACE blocks.
+    """Replaces specific sections of content in an existing file using SEARCH/REPLACE blocks within the working directory.
 
     Args:
-        path: Path of the file to modify (relative to current working directory)
+        path: Path of the file to modify (must be within working directory)
         diff: One or more SEARCH/REPLACE blocks following the exact format:
               <<<<<<< SEARCH
               [exact content to find]
@@ -197,15 +258,21 @@ def replace_in_file(path: str, diff: str) -> str:
         Confirmation message with details of changes made
     """
     try:
+        # Validate path security
+        security_error = validate_path_or_error(path)
+        if security_error:
+            return security_error
+
+        # Get safe path
+        safe_path = get_safe_path(path)
+
         # Check if file exists
-        if not os.path.exists(path):
-            return f"Error: The file '{path}' does not exist."
+        if not safe_path.exists():
+            return f"❌ Error: The file '{path}' does not exist."
 
-        # Read current file content
-        with open(path, "r", encoding="utf-8") as f:
+        # Read current content
+        with open(safe_path, "r", encoding="utf-8") as f:
             content = f.read()
-
-        changes_made = 0
 
         # Parse SEARCH/REPLACE blocks
         blocks = []
@@ -214,57 +281,59 @@ def replace_in_file(path: str, diff: str) -> str:
 
         while i < len(lines):
             if lines[i].strip() == "<<<<<<< SEARCH":
-                # Found start of SEARCH block
-                search_content = []
+                # Found start of search block
+                search_lines = []
                 i += 1
 
-                # Collect SEARCH content until separator
+                # Collect search content
                 while i < len(lines) and lines[i].strip() != "=======":
-                    search_content.append(lines[i])
+                    search_lines.append(lines[i])
                     i += 1
 
                 if i >= len(lines):
-                    return "Error: Malformed diff - missing ======= separator"
+                    return "❌ Error: Invalid diff format - missing '=======' separator"
 
                 # Skip the ======= line
                 i += 1
 
-                # Collect REPLACE content until end marker
-                replace_content = []
+                # Collect replace content
+                replace_lines = []
                 while i < len(lines) and lines[i].strip() != ">>>>>>> REPLACE":
-                    replace_content.append(lines[i])
+                    replace_lines.append(lines[i])
                     i += 1
 
                 if i >= len(lines):
-                    return "Error: Malformed diff - missing >>>>>>> REPLACE marker"
+                    return "❌ Error: Invalid diff format - missing '>>>>>>> REPLACE' end marker"
 
-                # Add the block
-                search_text = "\n".join(search_content)
-                replace_text = "\n".join(replace_content)
+                search_text = "\n".join(search_lines)
+                replace_text = "\n".join(replace_lines)
                 blocks.append((search_text, replace_text))
 
             i += 1
 
         if not blocks:
-            return "Error: No valid SEARCH/REPLACE blocks found in diff"
+            return "❌ Error: No valid SEARCH/REPLACE blocks found in diff"
 
         # Apply replacements
+        modified_content = content
+        changes_made = 0
+
         for search_text, replace_text in blocks:
-            if search_text in content:
-                content = content.replace(
+            if search_text in modified_content:
+                modified_content = modified_content.replace(
                     search_text, replace_text, 1
-                )  # Replace only first occurrence
+                )
                 changes_made += 1
             else:
-                return (
-                    f"Error: Could not find the exact text to replace:\n{search_text}"
-                )
+                return f"❌ Error: Search text not found in file:\n{search_text}"
 
-        # Write the modified content back to file
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(content)
+        # Write modified content back to file
+        with open(safe_path, "w", encoding="utf-8") as f:
+            f.write(modified_content)
 
-        return f"Successfully applied {changes_made} change(s) to '{path}'"
+        return f"✅ File '{path}' modified successfully. {changes_made} replacement(s) made."
 
+    except ValueError as e:
+        return f"🚫 Security Error: {str(e)}"
     except Exception as e:
-        return f"Error replacing content in file: {str(e)}"
+        return f"❌ Error modifying file: {str(e)}"

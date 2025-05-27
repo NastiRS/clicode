@@ -37,6 +37,7 @@ Coding assistant agent using Agno - An AI assistant specialized in programming t
 
 3. **Install clicode directly from GitHub:**
    ```bash
+   uv add git+https://github.com/NastiRS/cli_coder.git
    uv pip install git+https://github.com/NastiRS/cli_coder.git
    ```
 
