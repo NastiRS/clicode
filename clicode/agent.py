@@ -3,16 +3,16 @@ from agno.models.openai import OpenAIChat
 from agno.storage.sqlite import SqliteStorage
 from agno.memory.agent import AgentMemory
 from agno.tools.reasoning import ReasoningTools
-from src.agent_settings import settings
-from src.agent_system_instructions import instructions
+from .agent_settings import settings
+from .agent_system_instructions import instructions
 
 
-from src.tools.command_tools import (
+from .tools.command_tools import (
     execute_command,
     get_current_directory,
     change_directory,
 )
-from src.tools.file_tools import (
+from .tools.file_tools import (
     read_file,
     write_file,
     delete_file,

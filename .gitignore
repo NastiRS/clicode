@@ -8,7 +8,45 @@ wheels/
 
 # Virtual environments
 .venv
-agno_demos/
 .env
-uv.lock
+venv/
+env/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+agent_sessions.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
 tmp/
+temp/
+.tmp/
+
+# uv files
+uv.lock
+
+# Ruff cache
+.ruff_cache/
+
+# Test files
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Development
+agno_demos/
