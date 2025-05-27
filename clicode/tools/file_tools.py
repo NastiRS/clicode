@@ -2,18 +2,20 @@ import shutil
 from typing import Optional
 
 from agno.tools import tool
-from .security import validate_path_or_error, get_safe_path, truncate_output
+from ..security.security import validate_path_or_error, get_safe_path, truncate_output
+from ..security.file_validation import validate_file_access, format_validation_message
+from ..security.advanced_patch_system import apply_search_replace_patch
 
 
 @tool()
 def read_file(path: str) -> str:
-    """Reads the complete content of a file within the working directory.
+    """Reads the complete content of a file within the working directory with advanced validation.
 
     Args:
         path: Path of the file to read (must be within working directory)
 
     Returns:
-        File content as string
+        File content as string with validation information
     """
     try:
         # Validate path security
@@ -24,11 +26,27 @@ def read_file(path: str) -> str:
         # Get safe path
         safe_path = get_safe_path(path)
 
+        # Advanced file validation
+        validation_result = validate_file_access(str(safe_path))
+        validation_msg = format_validation_message(validation_result)
+
+        if not validation_result.is_valid:
+            return validation_msg
+
         with open(safe_path, "r", encoding="utf-8") as f:
             content = f.read()
 
+        # Build response with validation info
+        response = f"{validation_msg}\n\n"
+        response += f"📄 File: {path}\n"
+        if validation_result.file_type:
+            response += f"🏷️ Type: {validation_result.file_type.category} ({validation_result.file_type.mime_type})\n"
+        response += f"📏 Size: {len(content)} characters\n\n"
+        response += "Content:\n"
+        response += content
+
         # Truncate if content is too large
-        return truncate_output(content)
+        return truncate_output(response)
 
     except FileNotFoundError:
         return f"❌ Error: The file '{path}' does not exist."
@@ -243,7 +261,7 @@ def search_files(name: str, directory: str = ".", recursive: bool = True) -> str
 
 @tool()
 def replace_in_file(path: str, diff: str) -> str:
-    """Replaces specific sections of content in an existing file using SEARCH/REPLACE blocks within the working directory.
+    """Replaces specific sections of content using advanced patch system with fuzzy matching and validation.
 
     Args:
         path: Path of the file to modify (must be within working directory)
@@ -255,7 +273,7 @@ def replace_in_file(path: str, diff: str) -> str:
               >>>>>>> REPLACE
 
     Returns:
-        Confirmation message with details of changes made
+        Detailed confirmation message with validation and patch results
     """
     try:
         # Validate path security
@@ -266,72 +284,44 @@ def replace_in_file(path: str, diff: str) -> str:
         # Get safe path
         safe_path = get_safe_path(path)
 
-        # Check if file exists
-        if not safe_path.exists():
-            return f"❌ Error: The file '{path}' does not exist."
+        # Advanced file validation before modification
+        validation_result = validate_file_access(str(safe_path))
+        if not validation_result.is_valid:
+            return format_validation_message(validation_result)
 
-        # Read current content
-        with open(safe_path, "r", encoding="utf-8") as f:
-            content = f.read()
+        # Apply advanced patch system
+        patch_result = apply_search_replace_patch(
+            str(safe_path), diff, create_backup=True
+        )
 
-        # Parse SEARCH/REPLACE blocks
-        blocks = []
-        lines = diff.strip().split("\n")
-        i = 0
+        # Build detailed response
+        response = "🔧 Advanced Patch System Results:\n\n"
 
-        while i < len(lines):
-            if lines[i].strip() == "<<<<<<< SEARCH":
-                # Found start of search block
-                search_lines = []
-                i += 1
+        # Add validation info
+        if validation_result.warnings:
+            response += "⚠️ File Validation Warnings:\n"
+            for warning in validation_result.warnings:
+                response += f"  • {warning}\n"
+            response += "\n"
 
-                # Collect search content
-                while i < len(lines) and lines[i].strip() != "=======":
-                    search_lines.append(lines[i])
-                    i += 1
+        # Add patch results
+        if patch_result.success:
+            response += f"✅ {patch_result.message}\n"
+            response += f"📊 Changes applied: {len(patch_result.applied_changes)}\n"
+        else:
+            response += f"❌ {patch_result.message}\n"
+            if patch_result.failed_changes:
+                response += "Failed changes:\n"
+                for change, error in patch_result.failed_changes:
+                    response += f"  • {error}\n"
 
-                if i >= len(lines):
-                    return "❌ Error: Invalid diff format - missing '=======' separator"
+        # Add warnings from patch system
+        if patch_result.warnings:
+            response += "\n⚠️ Patch Warnings:\n"
+            for warning in patch_result.warnings:
+                response += f"  • {warning}\n"
 
-                # Skip the ======= line
-                i += 1
-
-                # Collect replace content
-                replace_lines = []
-                while i < len(lines) and lines[i].strip() != ">>>>>>> REPLACE":
-                    replace_lines.append(lines[i])
-                    i += 1
-
-                if i >= len(lines):
-                    return "❌ Error: Invalid diff format - missing '>>>>>>> REPLACE' end marker"
-
-                search_text = "\n".join(search_lines)
-                replace_text = "\n".join(replace_lines)
-                blocks.append((search_text, replace_text))
-
-            i += 1
-
-        if not blocks:
-            return "❌ Error: No valid SEARCH/REPLACE blocks found in diff"
-
-        # Apply replacements
-        modified_content = content
-        changes_made = 0
-
-        for search_text, replace_text in blocks:
-            if search_text in modified_content:
-                modified_content = modified_content.replace(
-                    search_text, replace_text, 1
-                )
-                changes_made += 1
-            else:
-                return f"❌ Error: Search text not found in file:\n{search_text}"
-
-        # Write modified content back to file
-        with open(safe_path, "w", encoding="utf-8") as f:
-            f.write(modified_content)
-
-        return f"✅ File '{path}' modified successfully. {changes_made} replacement(s) made."
+        return response.strip()
 
     except ValueError as e:
         return f"🚫 Security Error: {str(e)}"
