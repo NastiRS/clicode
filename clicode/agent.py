@@ -4,7 +4,7 @@ from agno.storage.sqlite import SqliteStorage
 from agno.memory.agent import AgentMemory
 from agno.tools.reasoning import ReasoningTools
 from .agent_settings import settings
-from .agent_system_instructions import instructions
+from .agent_system_instructions_optimized import instructions
 
 
 from .tools.command_tools import (

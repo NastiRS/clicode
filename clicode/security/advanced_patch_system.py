@@ -409,28 +409,6 @@ class AdvancedPatchSystem:
 
         return result
 
-    def create_backup(self, file_path: str) -> str:
-        """
-        Create a backup of a file before modification.
-
-        Args:
-            file_path: Path to the file to backup
-
-        Returns:
-            Path to the backup file
-        """
-        backup_path = f"{file_path}.backup"
-        counter = 1
-
-        while os.path.exists(backup_path):
-            backup_path = f"{file_path}.backup.{counter}"
-            counter += 1
-
-        with open(file_path, "rb") as src, open(backup_path, "wb") as dst:
-            dst.write(src.read())
-
-        return backup_path
-
     def validate_patch_safety(self, changes: List[FileChange]) -> List[str]:
         """
         Validate that patch changes are safe to apply.
@@ -466,16 +444,13 @@ class AdvancedPatchSystem:
         return warnings
 
 
-def apply_search_replace_patch(
-    file_path: str, diff_text: str, create_backup: bool = True
-) -> PatchResult:
+def apply_search_replace_patch(file_path: str, diff_text: str) -> PatchResult:
     """
     Apply a search/replace patch to a file.
 
     Args:
         file_path: Path to the file to modify
         diff_text: SEARCH/REPLACE block text
-        create_backup: Whether to create a backup before modification
 
     Returns:
         PatchResult indicating success/failure
@@ -496,11 +471,6 @@ def apply_search_replace_patch(
         # Validate safety
         warnings = patch_system.validate_patch_safety(changes)
 
-        # Create backup if requested
-        backup_path = None
-        if create_backup and os.path.exists(file_path):
-            backup_path = patch_system.create_backup(file_path)
-
         # Apply changes
         overall_result = PatchResult(True)
 
@@ -516,9 +486,6 @@ def apply_search_replace_patch(
 
         # Add safety warnings
         overall_result.warnings.extend(warnings)
-
-        if backup_path:
-            overall_result.add_warning(f"Backup created: {backup_path}")
 
         if overall_result.success:
             overall_result.message = f"Successfully applied patch to {file_path}"

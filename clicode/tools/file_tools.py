@@ -290,9 +290,7 @@ def replace_in_file(path: str, diff: str) -> str:
             return format_validation_message(validation_result)
 
         # Apply advanced patch system
-        patch_result = apply_search_replace_patch(
-            str(safe_path), diff, create_backup=True
-        )
+        patch_result = apply_search_replace_patch(str(safe_path), diff)
 
         # Build detailed response
         response = "🔧 Advanced Patch System Results:\n\n"
