@@ -1,8 +1,3 @@
-"""
-Advanced patch system inspired by Codex CLI.
-Provides precise file editing with context validation and fuzzy matching.
-"""
-
 import os
 import difflib
 from typing import List, Optional, Tuple

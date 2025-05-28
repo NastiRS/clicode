@@ -1,8 +1,3 @@
-"""
-Advanced file validation system inspired by Codex CLI.
-Provides file type detection, safety validation, and error prevention.
-"""
-
 import os
 import mimetypes
 from pathlib import Path

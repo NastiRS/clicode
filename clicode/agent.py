@@ -4,7 +4,7 @@ from agno.storage.sqlite import SqliteStorage
 from agno.memory.agent import AgentMemory
 from agno.tools.reasoning import ReasoningTools
 from .agent_settings import settings
-from .agent_system_instructions_optimized import instructions
+from .agent_system_instructions import instructions
 
 
 from .tools.command_tools import (
@@ -20,6 +20,9 @@ from .tools.file_tools import (
     search_files,
     replace_in_file,
 )
+from .tools.project_tools import (
+    get_project_structure,
+)
 
 
 def create_coding_agent():
@@ -31,6 +34,7 @@ def create_coding_agent():
         description="I am an expert coding assistant that can help you with programming tasks, file management and command execution.",
         instructions=instructions,
         tools=[
+            get_project_structure,
             read_file,
             write_file,
             delete_file,
