@@ -17,7 +17,7 @@ class FileType:
         self.is_safe = is_safe
 
 
-# Comprehensive file type definitions (inspired by Codex)
+# Comprehensive file type definitions
 KNOWN_FILE_TYPES: Dict[str, FileType] = {
     # Text files (safe)
     ".txt": FileType(".txt", "text/plain", "text", True),
@@ -68,7 +68,7 @@ KNOWN_FILE_TYPES: Dict[str, FileType] = {
     ),
 }
 
-# Dangerous file patterns (inspired by Codex security)
+# Dangerous file patterns
 DANGEROUS_PATTERNS: Set[str] = {
     "*.key",
     "*.pem",

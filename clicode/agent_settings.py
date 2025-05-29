@@ -5,6 +5,7 @@ class AgentSettings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
     DATABASE_PATH: str = "./agent_sessions.db"
+    GITHUB_ACCESS_TOKEN: str = ""
 
     class Config:
         env_file = ".env"

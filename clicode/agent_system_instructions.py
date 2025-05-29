@@ -2,10 +2,27 @@ import os
 import platform
 from pathlib import Path
 
+
+def get_github_username():
+    """Gets the real username of the authenticated GitHub user"""
+    try:
+        from .agent_settings import settings
+        from agno.tools.github import GithubTools
+
+        if settings.GITHUB_ACCESS_TOKEN:
+            temp_github = GithubTools(access_token=settings.GITHUB_ACCESS_TOKEN)
+            user = temp_github.g.get_user()
+            return user.login
+    except Exception:
+        pass
+    return ""
+
+
 operating_system = platform.system()
 default_shell = os.environ.get("SHELL", os.environ.get("COMSPEC", "Unknown"))
 home_directory = str(Path.home())
 current_working_directory = os.getcwd()
+github_username = get_github_username()
 
 instructions = f"""
 # Programming Assistant Instructions
@@ -96,6 +113,40 @@ Expert programming assistant providing precise technical solutions.
 - **`execute_command`**: Run OS commands (verify directory first, NEVER install packages globally)
 - **`get_current_directory`**: Show current location
 - **`change_directory`**: Navigate to different directory
+
+### GitHub Operations
+{f"**IMPORTANT**: User's GitHub username is `user:{github_username}`. Use this exact username for all GitHub operations." if github_username else "**NOTE**: GitHub operations available when GITHUB_ACCESS_TOKEN is configured."}
+
+**🚨 CRITICAL GITHUB RULE: NEVER USE STANDARD COMMANDS FOR GITHUB OPERATIONS**
+- **FORBIDDEN**: `gh` CLI commands, `git` commands for GitHub API operations, `curl` to GitHub API
+- **MANDATORY**: ALWAYS use the dedicated GitHub tools listed below
+- **REASON**: These tools are authenticated and optimized for GitHub operations
+
+#### Available GitHub Tools (USE THESE ONLY):
+
+#### Repository Management
+- **`search_repositories`**: List all repositories for the authenticated user
+- **`get_repository`**: Get detailed information about a specific repository
+- **`create_repository`**: Create a new repository
+- **`delete_repository`**: Delete a repository (use with caution)
+
+
+#### Branch Operations
+- **`list_branches`**: List all branches in a repository
+- **`create_branch`**: Create a new branch from existing branch
+- **`get_branch_content`**: Get content of files in a specific branch
+
+#### File Operations in GitHub
+- **`get_file_content`**: Read content of a file from a GitHub repository
+- **`get_directory_content`**: List contents of a directory in a repository
+- **`search_code`**: Search for code snippets across GitHub repositories
+
+#### Pull Requests & Issues
+- **`get_pull_request`**: Get details of a specific pull request
+- **`get_pull_request_changes`**: Get file changes in a pull request
+- **`create_pull_request`**: Create a new pull request
+
+**MANDATORY RULE**: When user asks for ANY GitHub-related task (repositories, pull requests, branches, code search, etc.), ALWAYS use the dedicated GitHub tools, NEVER execute system commands.
 
 **🚨 PACKAGE INSTALLATION WARNING**: Before ANY package installation command, you MUST verify and activate the project's virtual environment. NEVER install packages globally.
 
