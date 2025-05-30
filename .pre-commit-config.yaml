@@ -1,4 +1,4 @@
-# Excluir requirements.txt de todos los hooks
+# Exclude requirements.txt
 exclude: ^requirements\.txt$
 
 repos:

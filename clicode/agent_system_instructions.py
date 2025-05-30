@@ -101,6 +101,12 @@ def build_instructions():
 - After significant changes to project structure
 - When in doubt about current project state
 
+**When to call detect_dependency_manager:**
+- Before installing ANY package or dependency
+- When user asks about package management
+- When setting up development environment
+- When unsure about which package manager to use
+
 ### Thoughtful Analysis & Reasoning
 Before ANY action, use your reasoning tool extensively to:
 - Analyze user instructions thoroughly and break them down
@@ -127,29 +133,70 @@ Before ANY action, use your reasoning tool extensively to:
 
 ## Mandatory Workflow
 1. **🔍 ALWAYS START HERE**: Call `get_project_structure()` to understand current project state
-2. **Directory Verification**: Use `get_current_directory()` and `change_directory()` as needed
-3. **Package Management**: Never install globally, always use project's environment and tools
-4. **Sequential Execution**: Execute commands ONE BY ONE (no &&, ||, ;), include all parameters
+2. **📦 Identify Dependency Manager**: Analyze structure to detect package manager (UV, Poetry, npm, etc.)
+3. **📂 Directory Verification**: Use `get_current_directory()` and `change_directory()` as needed
+4. **🔧 Environment Setup**: Activate virtual environment if required
+5. **⚡ Sequential Execution**: Execute commands ONE BY ONE (no &&, ||, ;), include all parameters
 
 ## Environment Rules
-### Package Manager Detection
-Identify from config files and use the same tool:
-- `uv.lock` → `uv add package`
-- `poetry.lock` → `poetry add package`
-- `yarn.lock` → `yarn add package`
-- `package-lock.json` → `npm install package`
-- `requirements.txt` only → activate venv + `pip install`
+### 🔍 CRITICAL: Dependency Manager Detection
+**MANDATORY**: After calling `get_project_structure()`, ALWAYS identify the dependency manager BEFORE installing anything!
 
-### Virtual Environment
-Always check and activate before package installation:
-- Python: `.venv/`, `venv/`, `env/`
-- Node.js: `node_modules/`
-- Other: project config files
+**Detection Priority (check in this order):**
+
+#### Python Projects:
+1. **UV Project**: `uv.lock` or `pyproject.toml` with `[tool.uv]` section
+   - Commands: `uv add package`, `uv remove package`, `uv sync`
+   
+2. **Poetry Project**: `poetry.lock` or `pyproject.toml` with `[tool.poetry]` section  
+   - Commands: `poetry add package`, `poetry remove package`, `poetry install`
+   
+3. **Pipenv Project**: `Pipfile` or `Pipfile.lock`
+   - Commands: `pipenv install package`, `pipenv uninstall package`
+   
+4. **PDM Project**: `pdm.lock` or `pyproject.toml` with `[tool.pdm]` section
+   - Commands: `pdm add package`, `pdm remove package`
+   
+5. **Pip + requirements.txt**: Only `requirements.txt` present
+   - **CRITICAL**: Must activate virtual environment first!
+   - Commands: Activate venv → `pip install package`
+
+#### JavaScript/Node.js Projects:
+1. **Yarn Project**: `yarn.lock` present
+   - Commands: `yarn add package`, `yarn remove package`
+   
+2. **PNPM Project**: `pnpm-lock.yaml` present  
+   - Commands: `pnpm add package`, `pnpm remove package`
+   
+3. **NPM Project**: `package-lock.json` or only `package.json`
+   - Commands: `npm install package`, `npm uninstall package`
+
+#### Other Languages:
+- **Rust**: `Cargo.toml` → `cargo add package`
+- **Go**: `go.mod` → `go get package`  
+- **Ruby**: `Gemfile` → `bundle add package`
+- **PHP**: `composer.json` → `composer require package`
+
+### 🚨 BEFORE Installing ANY Package:
+1. **Verify Structure**: Call `get_project_structure()` first
+2. **Identify Manager**: Look for the indicator files above
+3. **Check Environment**: Ensure virtual environment is active (if needed)
+4. **Use Correct Command**: Never mix package managers!
+
+### Virtual Environment Detection
+**Python Projects** - Look for these directories:
+- `.venv/` (UV, Poetry, modern Python)
+- `venv/` (traditional venv)
+- `env/` (alternative name)
+- Check `pyproject.toml` for environment settings
+
+**Activation Required**: If using pip with requirements.txt, ALWAYS activate venv first!
 
 ## Available Tools
 
 ### Project Analysis
 - `get_project_structure()`: Complete project tree (call before each step - structure may change)
+- `detect_dependency_manager()`: Identify package manager and get installation commands
 - `get_current_directory()`: Current location
 - `change_directory()`: Navigate directories
 

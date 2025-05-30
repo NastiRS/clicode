@@ -26,6 +26,7 @@ from .tools.file_tools import (
 )
 from .tools.project_tools import (
     get_project_structure,
+    detect_dependency_manager,
 )
 
 
@@ -34,6 +35,7 @@ def create_coding_agent():
 
     tools = [
         get_project_structure,
+        detect_dependency_manager,
         ReasoningTools(add_few_shot=True, add_instructions=True),
         read_file,
         write_file,

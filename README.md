@@ -26,7 +26,7 @@ AI coding assistant with advanced reasoning, web search, and GitHub integration.
 
 3. **Run the assistant:**
    ```bash
-   uv run clicode chat
+   uv run clicode chat or clicode chat
    ```
 
 ## Configuration

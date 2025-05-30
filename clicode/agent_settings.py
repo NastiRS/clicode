@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class AgentSettings(BaseSettings):
-    OPENROUTER_MODEL: str = "gpt-4o-mini"
+    OPENROUTER_MODEL: str = "gpt-4.1-mini"
     OPENROUTER_API_KEY: str = ""
     DATABASE_PATH: str = "./agent_sessions.db"
     GITHUB_ACCESS_TOKEN: str = ""
