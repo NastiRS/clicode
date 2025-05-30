@@ -2,10 +2,11 @@ from pydantic_settings import BaseSettings
 
 
 class AgentSettings(BaseSettings):
-    OPENAI_API_KEY: str = ""
-    OPENAI_MODEL: str = "gpt-4o-mini"
+    OPENROUTER_MODEL: str = "gpt-4o-mini"
+    OPENROUTER_API_KEY: str = ""
     DATABASE_PATH: str = "./agent_sessions.db"
     GITHUB_ACCESS_TOKEN: str = ""
+    EXA_API_KEY: str = ""
 
     class Config:
         env_file = ".env"
@@ -19,16 +20,16 @@ def get_settings():
         settings = AgentSettings()
 
         # If no API key is configured, show help message
-        if not settings.OPENAI_API_KEY:
-            print("⚠️  OPENAI_API_KEY not found")
-            print("💡 Configure your OpenAI API key:")
-            print("   - As environment variable: set OPENAI_API_KEY=your_key")
-            print("   - Or create a .env file with: OPENAI_API_KEY=your_key")
-            raise ValueError("OPENAI_API_KEY is required")
+        if not settings.OPENROUTER_API_KEY:
+            print("⚠️  OPENROUTER_API_KEY not found")
+            print("💡 Configure your OpenRouter API key:")
+            print("   - As environment variable: set OPENROUTER_API_KEY=your_key")
+            print("   - Or create a .env file with: OPENROUTER_API_KEY=your_key")
+            raise ValueError("OPENROUTER_API_KEY is required")
 
         return settings
     except Exception as e:
-        if "OPENAI_API_KEY is required" in str(e):
+        if "OPENROUTER_API_KEY is required" in str(e):
             raise
         print(f"❌ Configuration error: {e}")
         raise

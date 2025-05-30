@@ -30,12 +30,12 @@ def get_project_structure(root_path: Optional[str] = None) -> str:
         safe_path = get_safe_path(root_path)
 
         ignore_dirs = {
-            ".venv",
-            "venv",
-            "env",
+            # ".venv",
+            # "venv",
+            # "env",
             "__pycache__",
-            ".git",
-            "node_modules",
+            # ".git",
+            # "node_modules",
             ".pytest_cache",
             ".mypy_cache",
             ".ruff_cache",

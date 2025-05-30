@@ -4,8 +4,9 @@ from typing import Union
 
 # Configuration constants
 DEFAULT_TIMEOUT = 10  # seconds
-MAX_OUTPUT_BYTES = 10 * 1024  # 10KB
-MAX_OUTPUT_LINES = 256
+MAX_OUTPUT_BYTES = 50 * 1024  # 50KB
+MAX_OUTPUT_LINES = 1000  # 1000 lines
+MAX_FILE_SIZE = 100 * 1024  # 100KB
 
 # Get the working directory when the agent starts
 WORKING_DIRECTORY = Path.cwd().resolve()

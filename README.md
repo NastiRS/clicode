@@ -1,48 +1,55 @@
 # Clicode
 
-Coding assistant agent using Agno - An AI assistant specialized in programming that can help you with development tasks, file management and command execution.
+AI coding assistant with advanced reasoning, web search, and GitHub integration.
 
 ## Features
 
-- 🤖 AI assistant specialized in programming
-- 📁 File management (read, write, delete, search)
-- ⚡ System command execution
-- 💾 Persistent conversation memory
-- 🔧 Advanced reasoning tools
+- 🧠 **Advanced Reasoning** - Deep analysis and step-by-step thinking
+- 🔍 **Web Search** - Access to technical documentation via Exa API
+- 🐙 **GitHub Integration** - Repository management and code search
+- 📁 **File Management** - Read, write, delete, search files
+- ⚡ **Command Execution** - Run system commands safely
+- 💾 **Persistent Memory** - Remembers conversation context
 
-## Installation
+## Quick Start
 
-### Requirements
-- Python 3.12 or higher
-- An OpenAI API key
-
-### Quick installation
-
-1. **Create a virtual environment:**
+1. **Install dependencies:**
    ```bash
-   uv venv
+   uv sync
    ```
 
-2. **Activate the virtual environment:**
-   
-   **On Windows:**
+2. **Set up environment:**
    ```bash
-   .venv\Scripts\activate
-   ```
-   
-   **On macOS/Linux:**
-   ```bash
-   source .venv/bin/activate
+   cp .env.example .env
+   # Edit .env with your API keys
    ```
 
-3. **Install clicode directly from GitHub:**
+3. **Run the assistant:**
    ```bash
-   uv add git+https://github.com/NastiRS/cli_coder.git
-   uv pip install git+https://github.com/NastiRS/cli_coder.git
+   uv run clicode chat
    ```
 
-### Configuration
+## Configuration
 
-**⚠️ IMPORTANT:** You must configure your OpenAI API key before using clicode.
+Required environment variables in `.env`:
 
-**Option 1: Environment variable (recommended)**
+```bash
+# Required
+OPENROUTER_API_KEY=your_openrouter_api_key
+
+# Optional
+OPENROUTER_MODEL=your_openrouter_model # gpt-4.1-mini by default
+GITHUB_ACCESS_TOKEN=your_github_token  # For GitHub features
+EXA_API_KEY=your_exa_api_key          # For web search
+```
+
+## Key Capabilities
+
+- **Smart Project Analysis** - Automatically detects project structure and tools
+- **Package Management** - Respects project environments (uv, poetry, npm, etc.)
+- **Technical Search** - Finds official documentation and code examples
+- **GitHub Operations** - Create repos, manage branches, search code
+
+## License
+
+MIT
